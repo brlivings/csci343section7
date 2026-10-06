@@ -18,6 +18,13 @@ import Colors from "../constants/colors";
 // This screen does NOT hold any state itself. Everything comes in as props
 // from App.js and any change gets sent back up with the "on..." functions.
 function HomeScreen(props) {
+  // add the price to each radio button label so the user can see it,
+  // ex: "Expedited" -> "Expedited ($50)"
+  const radioButtonsWithPrices = props.repairTimeRadioButtons.map((button) => ({
+    ...button,
+    label: button.label + " ($" + button.price + ")",
+  }));
+
   return (
     <ImageBackground
       source={require("../assets/images/shop-background.png")}
@@ -33,7 +40,7 @@ function HomeScreen(props) {
             <Text style={styles.sectionTitle}>Service Time</Text>
             <Text style={styles.sectionHint}>Pick one</Text>
             <RadioGroup
-              radioButtons={props.repairTimeRadioButtons}
+              radioButtons={radioButtonsWithPrices}
               onPress={props.onChangeRepairTime}
               selectedId={props.repairTimeId}
               layout="column"
