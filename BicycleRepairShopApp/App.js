@@ -6,26 +6,10 @@ import * as SplashScreen from "expo-splash-screen";
 
 import HomeScreen from "./screens/HomeScreen";
 import OrderReviewScreen from "./screens/OrderReviewScreen";
+import Colors from "./constants/colors";
 
 // keep the splash screen up until the fonts are done loading
 SplashScreen.preventAutoHideAsync();
-
-// sales tax rate used on the order review screen (6%)
-const salesTaxRate = 0.06;
-
-// starting list of service options. value = whether the box is checked.
-// I keep this outside the component so I can reuse it to reset the order.
-const initialServices = [
-  { id: 0, name: "Basic Tune-Up", price: 50, value: false },
-  { id: 1, name: "Comprehensive Tune-Up", price: 75, value: false },
-  { id: 2, name: "Flat Tire Repair", price: 20, value: false },
-  { id: 3, name: "Brake Servicing", price: 50, value: false },
-  { id: 4, name: "Gear Servicing", price: 40, value: false },
-  { id: 5, name: "Chain Servicing", price: 15, value: false },
-  { id: 6, name: "Frame Repair", price: 35, value: false },
-  { id: 7, name: "Safety Check", price: 25, value: false },
-  { id: 8, name: "Accessory Install", price: 10, value: false },
-];
 
 export default function App() {
   // load the custom fonts from the assets folder
@@ -37,33 +21,63 @@ export default function App() {
 
   // ---------- ALL app state lives here in App.js ----------
 
-  // which screen is showing: "home" or "review"
-  const [currentScreen, setCurrentScreen] = useState("home");
+  // which screen is showing. "" = home screen, "review" = order review screen
+  const [currentScreen, setCurrentScreen] = useState("");
+  // price of the order before tax, gets calculated when the order is submitted
+  const [currentPrice, setCurrentPrice] = useState(0);
 
   // radio buttons for the service time (standard / expedited / next day)
   // useMemo so the array isn't rebuilt every render (recommended by the library)
   const repairTimeRadioButtons = useMemo(
     () => [
-      { id: "0", label: "Standard ($0)", value: "Standard", price: 0 },
-      { id: "1", label: "Expedited ($50)", value: "Expedited", price: 50 },
-      { id: "2", label: "Next Day ($100)", value: "Next Day", price: 100 },
+      {
+        id: "0",
+        label: "Standard",
+        value: "Standard",
+        price: 0,
+        borderColor: Colors.primary500,
+        color: Colors.primary500,
+      },
+      {
+        id: "1",
+        label: "Expedited",
+        value: "Expedited",
+        price: 50,
+        borderColor: Colors.primary500,
+        color: Colors.primary500,
+      },
+      {
+        id: "2",
+        label: "Next Day",
+        value: "Next Day",
+        price: 100,
+        borderColor: Colors.primary500,
+        color: Colors.primary500,
+      },
     ],
     []
   );
-  // standard ("0") is picked by default
+
+  // which radio button is picked. the radio button ids are strings,
+  // so I start it at "0" so Standard is selected by default
   const [repairTimeId, setRepairTimeId] = useState("0");
 
-  // checkbox service options
-  const [services, setServices] = useState(initialServices);
+  // checkbox service options. value = whether the box is checked
+  const [services, setServices] = useState([
+    { id: 0, name: "Basic Tune-Up", value: false, price: 50 },
+    { id: 1, name: "Comprehensive Tune-Up", value: false, price: 75 },
+    { id: 2, name: "Flat Tire Repair", value: false, price: 20 },
+    { id: 3, name: "Brake Servicing", value: false, price: 50 },
+    { id: 4, name: "Gear Servicing", value: false, price: 40 },
+    { id: 5, name: "Chain Servicing", value: false, price: 15 },
+    { id: 6, name: "Frame Repair", value: false, price: 35 },
+    { id: 7, name: "Safety Check", value: false, price: 25 },
+    { id: 8, name: "Accessory Install", value: false, price: 10 },
+  ]);
 
   // switches
   const [newsletter, setNewsletter] = useState(false);
   const [rentalMembership, setRentalMembership] = useState(false);
-
-  // prices that get calculated when the order is submitted
-  const [subtotal, setSubtotal] = useState(0);
-  const [salesTax, setSalesTax] = useState(0);
-  const [total, setTotal] = useState(0);
 
   // once the fonts are loaded we can hide the splash screen
   useEffect(() => {
@@ -84,31 +98,27 @@ export default function App() {
   // runs when "Submit Order" is pressed on the home screen.
   // adds up the price of everything the user picked, then goes to the review screen
   function submitOrderHandler() {
-    let newSubtotal = 0;
+    let price = 0;
 
     // price of the selected service time
     const selectedTime = repairTimeRadioButtons.find(
       (button) => button.id === repairTimeId
     );
-    newSubtotal += selectedTime.price;
+    price += selectedTime.price;
 
     // add every checked service option
     for (const service of services) {
       if (service.value) {
-        newSubtotal += service.price;
+        price += service.price;
       }
     }
 
     // newsletter is free, rental membership is $100
     if (rentalMembership) {
-      newSubtotal += 100;
+      price += 100;
     }
 
-    const newSalesTax = newSubtotal * salesTaxRate;
-
-    setSubtotal(newSubtotal);
-    setSalesTax(newSalesTax);
-    setTotal(newSubtotal + newSalesTax);
+    setCurrentPrice(price);
     setCurrentScreen("review");
   }
 
@@ -116,13 +126,14 @@ export default function App() {
   // so the user can start a brand new order
   function returnHomeHandler() {
     setRepairTimeId("0");
-    setServices(initialServices);
+    // uncheck every service option
+    setServices((prevServices) =>
+      prevServices.map((service) => ({ ...service, value: false }))
+    );
     setNewsletter(false);
     setRentalMembership(false);
-    setSubtotal(0);
-    setSalesTax(0);
-    setTotal(0);
-    setCurrentScreen("home");
+    setCurrentPrice(0);
+    setCurrentScreen("");
   }
 
   // don't show anything (splash stays up) until the fonts are ready
@@ -156,9 +167,7 @@ export default function App() {
         services={services}
         newsletter={newsletter}
         rentalMembership={rentalMembership}
-        subtotal={subtotal}
-        salesTax={salesTax}
-        total={total}
+        price={currentPrice}
         onReturnHome={returnHomeHandler}
       />
     );

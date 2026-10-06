@@ -7,10 +7,15 @@ import NavButton from "../components/NavButton";
 import Colors from "../constants/colors";
 
 // Order review screen - shows a breakdown of everything the user picked
-// plus the subtotal, sales tax and final total that App.js calculated.
+// plus the subtotal, sales tax and final total.
+// props.price is the order price (before tax) that App.js calculated.
 function OrderReviewScreen(props) {
   // only keep the services that were actually checked
   const selectedServices = props.services.filter((service) => service.value);
+
+  // 6% sales tax on top of the subtotal
+  const salesTax = props.price * 0.06;
+  const finalTotal = props.price + salesTax;
 
   return (
     <LinearGradient
@@ -68,18 +73,18 @@ function OrderReviewScreen(props) {
             <View style={styles.lineItem}>
               <Text style={styles.totalLabel}>Subtotal</Text>
               <Text style={styles.totalLabel}>
-                ${props.subtotal.toFixed(2)}
+                ${props.price.toFixed(2)}
               </Text>
             </View>
             <View style={styles.lineItem}>
               <Text style={styles.totalLabel}>Sales Tax (6%)</Text>
               <Text style={styles.totalLabel}>
-                ${props.salesTax.toFixed(2)}
+                ${salesTax.toFixed(2)}
               </Text>
             </View>
             <View style={[styles.lineItem, styles.finalRow]}>
               <Text style={styles.finalText}>Total</Text>
-              <Text style={styles.finalText}>${props.total.toFixed(2)}</Text>
+              <Text style={styles.finalText}>${finalTotal.toFixed(2)}</Text>
             </View>
           </View>
 
